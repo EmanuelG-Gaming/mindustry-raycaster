@@ -1,0 +1,6 @@
+name: "raycaster" 
+displayName: "Mindustry Raycaster" 
+author: "Emanuel G"
+description: "Toggles a flashlight when there is ambient light." 
+version: "0.1 Pre-Alpha" 
+minGameVersion: 137
