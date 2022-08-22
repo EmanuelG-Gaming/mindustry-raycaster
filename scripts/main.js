@@ -1,14 +1,10 @@
-let lineLength = 12 * Vars.tilesize;
-let FOV = 16;
+let lineLength = 20 * Vars.tilesize;
+let FOV = 20;
 let spacing = Vars.tilesize / 2;
-
-function fl(number) {
-   return Mathf.floor(number);
-};
 
 function Ray(unit, angle) {
    let len;
-   Vars.world.raycastEachWorld(fl(unit.x), fl(unit.y), fl(unit.x + Angles.trnsx(angle, lineLength)), fl(unit.y + Angles.trnsy(angle, lineLength)), (tx, ty) => {
+   Vars.world.raycastEachWorld(unit.x, unit.y, unit.x + Angles.trnsx(angle, lineLength), unit.y + Angles.trnsy(angle, lineLength), (tx, ty) => {
       let tile = Vars.world.tile(tx, ty); //tile to check
       if (tile != null && tile.solid()) {
       	len = unit.dst(tile);
@@ -38,8 +34,7 @@ Events.run(Trigger.draw, () => {
          plr.x, plr.y,
          plr.x + Angles.trnsx(angleThing, len),
          plr.y + Angles.trnsy(angleThing, len),
-         spacing, Pal.accent, 0.5
+         spacing, plr.type.lightColor, plr.type.lightOpacity
       );
    }
 });
-
