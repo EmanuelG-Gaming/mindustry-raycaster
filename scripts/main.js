@@ -19,6 +19,20 @@ function Ray(unit, angle) {
 Events.on(ClientLoadEvent, () => {
    //no need for circular lanterns here
    Vars.content.units().each(u => u.lightRadius = 0);
+
+   Vars.ui.settings.addCategory("Mindustry Raycaster", Icon.units, tb => {
+      tb.sliderPref("Field Of View", 20, 1, 35, 1, res => {
+      	FOV = parseInt(res);
+
+      	return res;
+      });
+
+      tb.sliderPref("Line Length", 20, 1, 35, 1, res => {
+      	lineLength = parseInt(res) * Vars.tilesize;
+
+      	return res;
+      });
+   });
 });
 
 Events.run(Trigger.draw, () => {
