@@ -5,28 +5,32 @@ let spacing = Vars.tilesize / 2;
 let enabled = false;
 
 function initFrag() {
-   const frag = {
+   return {
       build(parent) {
          parent.fill(null, t => {
             t.right();
-            let but = t.button(new TextureRegionDrawable(Core.atlas.find("error")), 64, () => {
-            	enabled = !enabled;
-                Sounds.click.play(1);
-            }).size(80).get();
+            t.table(Styles.none, t2 => {
+               let but = t2.button(new TextureRegionDrawable(Core.atlas.find("error")), 64, () => {
+              	enabled = !enabled;
+                  Sounds.click.play(1);
+               }).size(80).get();
             
-            but.update(() => {
-            	let icon = Core.atlas.find(enabled ? "raycaster-flashlight-enabled" : "raycaster-flashlight-disabled");
-                but.getStyle().imageUp = new TextureRegionDrawable(icon);
-            });
+               but.update(() => {
+              	let icon = Core.atlas.find((enabled ? "raycaster-flashlight-enabled" : "raycaster-flashlight-disabled"));
+                  but.getStyle().imageUp = new TextureRegionDrawable(icon);
+               });
+               
+               t2.row();
+               t2.add("Toggle").style(Styles.defaultLabel).padBottom(8);
+            }).marginRight(8);
          });
       }
-   }; 
-   return frag;
+   };
 };
 
 function Ray(unit, angle) {
    let len;
-   Vars.world.raycastEachWorld(unit.x, unit.y, unit.x + Angles.trnsx(angle, lineLength), unit.y + Angles.trnsy(angle, lineLength), (tx, ty) => {
+   World.raycast(tile(unit.x), tile(unit.y), tile(unit.x + Angles.trnsx(angle, lineLength)), tile(unit.y + Angles.trnsy(angle, lineLength)), (tx, ty) => {
       let tile = Vars.world.tile(tx, ty); //tile to check
       if (tile != null && tile.solid()) {
       	len = unit.dst(tile);
@@ -36,6 +40,26 @@ function Ray(unit, angle) {
       return false;
    });
    return len;
+};
+
+function tile(number) {
+   return World.toTile(number);
+};
+
+function drawRays() {
+   let plr = Vars.player.unit();
+   let angle = plr.rotation;
+   
+   for (let i = 0; i < FOV; i++) {
+      let angleThing = angle - (FOV * (spacing / 2)) / 2 + i * (spacing / 2);
+      let r = Ray(plr, angleThing);
+      Drawf.light(
+         plr.x, plr.y,
+         plr.x + Angles.trnsx(angleThing, r),
+         plr.y + Angles.trnsy(angleThing, r),
+         spacing, plr.type.lightColor, plr.type.lightOpacity
+      );
+   }
 };
 
 Events.on(ClientLoadEvent, () => {
@@ -56,25 +80,13 @@ Events.on(ClientLoadEvent, () => {
       });
    });
    
-   initFrag().build(Vars.ui.hudGroup);
+   const toggleFrag = initFrag();
+   toggleFrag.build(Vars.ui.hudGroup);
 });
 
 Events.run(Trigger.draw, () => {
-   //only toggle when there is lighting
-   if (Vars.state.isMenu() && !Renderer.lights.enabled()) return;
-   
-   if (enabled) {
-      let plr = Vars.player.unit();
-      let angle = plr.rotation;
-      for (let i = 0; i < FOV; i++) {
-         let angleThing = angle - (FOV * (spacing / 2)) / 2 + i * (spacing / 2);
-         let len = Ray(plr, angleThing);
-         Drawf.light(
-            plr.x, plr.y,
-            plr.x + Angles.trnsx(angleThing, len),
-            plr.y + Angles.trnsy(angleThing, len),
-            spacing, plr.type.lightColor, plr.type.lightOpacity
-         );
-      }
-   }
+   //only light when there is lighting
+   if ((Vars.state.isMenu() && !Renderer.lights.enabled()) || !enabled) return;
+  
+   drawRays();
 });
