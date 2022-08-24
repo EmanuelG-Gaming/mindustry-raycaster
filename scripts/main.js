@@ -9,20 +9,26 @@ function initFrag() {
       build(parent) {
          parent.fill(null, t => {
             t.right();
-            t.table(Styles.none, t2 => {
+            let tab = t.table(Styles.none, t2 => {
                let but = t2.button(new TextureRegionDrawable(Core.atlas.find("error")), 64, () => {
               	enabled = !enabled;
                   Sounds.click.play(1);
                }).size(80).get();
-            
+ 
                but.update(() => {
-              	let icon = Core.atlas.find((enabled ? "raycaster-flashlight-enabled" : "raycaster-flashlight-disabled"));
+                  let icon = Core.atlas.find(Vars.renderer.lights.enabled() ? (enabled ? "raycaster-flashlight-enabled" : "raycaster-flashlight-disabled") : "raycaster-flashlight-broken");
                   but.getStyle().imageUp = new TextureRegionDrawable(icon);
                });
                
                t2.row();
                t2.add("Toggle").style(Styles.defaultLabel).padBottom(8);
-            }).marginRight(8);
+            }).marginRight(8).get();
+            
+            tab.visibility = () => {
+               let menuBlock = Reflect.get(Vars.ui.hudfrag.blockfrag, "menuHoverBlock");
+           	if (Vars.control.input.block != null || menuBlock != null || Vars.ui.hudfrag.blockfrag.hover() != null) return false;
+               return true;
+            };	
          });
       }
    };
@@ -31,9 +37,10 @@ function initFrag() {
 function Ray(unit, angle) {
    let len;
    World.raycast(tile(unit.x), tile(unit.y), tile(unit.x + Angles.trnsx(angle, lineLength)), tile(unit.y + Angles.trnsy(angle, lineLength)), (tx, ty) => {
-      let tile = Vars.world.tile(tx, ty); //tile to check
-      if (tile != null && tile.solid()) {
-      	len = unit.dst(tile);
+      let t = Vars.world.tile(tx, ty);
+      if (t != null && t.solid()) {
+      	//TODO no tile snapping?
+      	len = unit.dst(t);
       	return true;
       }
       len = lineLength;
@@ -85,8 +92,9 @@ Events.on(ClientLoadEvent, () => {
 });
 
 Events.run(Trigger.draw, () => {
-   //only light when there is lighting
-   if ((Vars.state.isMenu() && !Renderer.lights.enabled()) || !enabled) return;
-  
+   //only light when there is lighting, the flashlight is on, and the player isn't a building
+   if (Vars.state.isMenu() || !Vars.renderer.lights.enabled()) return;
+   if (!enabled || Vars.player.unit() instanceof BlockUnitc) return;
+   
    drawRays();
 });
