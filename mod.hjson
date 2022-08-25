@@ -2,7 +2,7 @@ name: "raycaster"
 displayName: "Mindustry Raycaster" 
 author: "Emanuel G"
 description: "Toggles a flashlight when there is ambient light. Purely a visual mod." 
-version: "0.2 Pre-Alpha" 
+version: "0.3 Pre-Alpha" 
 subtitle: "I thought it was a raycaster."
 minGameVersion: 137
 hidden: true
