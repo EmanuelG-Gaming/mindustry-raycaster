@@ -5,24 +5,45 @@ let spacing = Vars.tilesize / 2;
 let player;
 let enabled = false;
 
+
+const LightSources = {
+   flashlight: new LightSource("flashlight-"), lantern: new LightSource("lantern-"),
+};
+let lightIndex = 0;
+let radii = [];
+
+function LightSource(alias) {
+   this.alias = alias;
+   return {alias: this.alias};
+};
+
 function initFrag() {
    return {
       build(parent) {
          parent.fill(null, t => {
             t.right();
             let tab = t.table(Styles.none, t2 => {
+               t2.defaults().padBottom(8);
+               t2.button(Icon.refresh1, 30, () => {
+              	lightIndex++;
+                  lightIndex %= Object.keys(LightSources).length;
+               }).size(60); 
+               t2.row();
+               
                let but = t2.button(new TextureRegionDrawable(Core.atlas.find("error")), 64, () => {
               	enabled = !enabled;
                   Sounds.click.play(1);
                }).size(80).get();
  
                but.update(() => {
-                  let icon = Core.atlas.find(Vars.renderer.lights.enabled() ? (enabled ? "raycaster-flashlight-enabled" : "raycaster-flashlight-disabled") : "raycaster-flashlight-broken");
+                  let k = Object.keys(LightSources);
+                  let name = LightSources[k[lightIndex].toString()].alias;
+                  let icon = Core.atlas.find(Vars.renderer.lights.enabled() ? (enabled ? "lighting-" + name + "enabled" : "lighting-" + name + "disabled") : "lighting-" + name + "broken");
                   but.getStyle().imageUp = new TextureRegionDrawable(icon);
                });
                
                t2.row();
-               t2.add("Toggle").style(Styles.defaultLabel).padBottom(8);
+               t2.add("Toggle").style(Styles.defaultLabel);
             }).marginRight(8).get();
             
             tab.visibility = () => {
@@ -74,9 +95,19 @@ function drawRays() {
    }
 };
 
+function drawCircular() {
+   for (let pair of radii) {
+      if (pair[1] == player.type) {
+         Drawf.light(player.x, player.y, pair[0], player.type.lightColor, player.type.lightOpacity);
+      }
+   }
+};
+
 Events.on(ClientLoadEvent, () => {
-   //no need for circular lanterns here
-   Vars.content.units().each(u => u.lightRadius = 0);
+   Vars.content.units().each(u => {
+      radii.push([u.lightRadius, u]);
+      u.lightRadius = 0;
+   });
    
    //experimental fog of war rendering
    Vars.content.units().each(u => {
@@ -102,14 +133,14 @@ Events.on(ClientLoadEvent, () => {
        });
    });
   
-   Vars.ui.settings.addCategory("Mindustry Raycaster", Icon.units, tb => {
-      tb.sliderPref("Field Of View", 20, 1, 35, 1, res => {
+   Vars.ui.settings.addCategory("Mindustry Lighting", Icon.units, tb => {
+      tb.sliderPref("(Flashlight) Field Of View", 20, 1, 35, 1, res => {
      	FOV = parseInt(res);
 
      	return res;
       });
 
-      tb.sliderPref("Line Length", 20, 1, 35, 1, res => {
+      tb.sliderPref("(Flashlight) Line Length", 20, 1, 35, 1, res => {
      	lineLength = parseInt(res) * Vars.tilesize;
 
      	return res;
@@ -121,10 +152,14 @@ Events.on(ClientLoadEvent, () => {
 });
 
 Events.run(Trigger.draw, () => {
-   //only light when there is lighting, the flashlight is on, and the player isn't a building
+   //only light when there is lighting, the player toggles a light source, and the player isn't a building
    if (Vars.state.isMenu() || !checkLights() || player instanceof BlockUnitc) return;
    
-   drawRays();
+   let current = Object.keys(LightSources)[lightIndex].toString();
+   if (current == "flashlight") {
+      drawRays();
+   }
+   else drawCircular();
 });
 
 Events.run(Trigger.update, () => player = Vars.player.unit());
