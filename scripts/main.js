@@ -1,6 +1,7 @@
 let lineLength = 20 * Vars.tilesize;
 let FOV = 20;
 let spacing = Vars.tilesize / 2;
+let line_thickness = Vars.tilesize / 2;
 
 let player;
 let light_enabled = false;
@@ -104,7 +105,7 @@ function drawRays()
          player.x, player.y,
          player.x + Angles.trnsx(angleThing, r),
          player.y + Angles.trnsy(angleThing, r),
-         spacing, player.type.lightColor, player.type.lightOpacity
+         line_thickness, player.type.lightColor, player.type.lightOpacity
       );
    }
 };
@@ -155,17 +156,27 @@ Events.on(ClientLoadEvent, () => {
     });
     
     Vars.ui.settings.addCategory("Mindustry Lighting", Icon.units, tb => {
-        tb.sliderPref("(Flashlight) Field Of View", 20, 1, 35, 1, res => {
+        tb.sliderPref("Field Of View", 20, 1, 35, 1, res => {
      	    FOV = parseInt(res);
 
      	    return res;
         });
 
-        tb.sliderPref("(Flashlight) Line Length", 20, 1, 35, 1, res => {
+        tb.sliderPref("Line Length", 20, 1, 35, 1, res => {
      	    lineLength = parseInt(res) * Vars.tilesize;
 
      	    return res;
         });
+
+        tb.sliderPref("Line Width", Vars.tilesize, 1, 35, 1, res => {
+            line_thickness = parseInt(res);
+
+            return res;
+        });
+
+        // TODO: Might make this a button, to be less distracting
+        tb.row();
+        tb.labelWrap("@ui.param-descriptions").color(Color.lightGray).size(400, 0).padTop(16).top().center();
     });
    
     const toggleFrag = initFrag();
